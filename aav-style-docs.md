@@ -1,6 +1,6 @@
 ---
 name: "aav-style-docs"
-description: "DOCUMENTATION lens of the aav-style fleet. Dispatched by the aav-style orchestrator (not usually invoked directly). Owns one atomic slice of Arpad's style spec: documentation content and verbosity — file-doc comments, doc comments on every public/internal item, verbose function doc structure (# Arguments / # Example / # Safety), impl-block doc comments, and constant/static doc comments. Assumes code arrives under-documented and makes the documentation granular, multi-line, and thorough. Does NOT touch comment separators, imports, or attributes ordering — those are other lenses."
+description: "DOCUMENTATION lens of the aav-style fleet. Dispatched by the aav-style orchestrator (not usually invoked directly). Owns one atomic slice of Arpad's style spec: documentation content and verbosity — file-doc comments, doc comments on every public/internal item, verbose function doc structure (# Arguments / # Example / # Safety), impl-block doc comments, and constant/static doc comments. Assumes code arrives under-documented and makes the documentation granular, multi-line, and thorough. Does NOT touch comment separators, imports, or item attributes — those are other lenses."
 color: green
 model: sonnet
 memory: user
