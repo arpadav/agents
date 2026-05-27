@@ -37,6 +37,7 @@ fn transfer(from: AccountId, to: AccountId, amount: Cents) { /* ... */ }
 ### TYPE-3 — Make illegal states unrepresentable
 - Flag structs where field *combinations* can be invalid — especially a `bool`/flag plus an `Option` that is only meaningful when the flag is set (`ssl: bool` + `ssl_cert: Option<String>`). A doc comment like "X must be set when Y is true" is a dead giveaway the type is modeled wrong.
 - Replace correlated fields with an `enum` whose variants carry exactly the data each state needs. The invalid combination then literally cannot be constructed, and the runtime asserts guarding it disappear. This is the structural sibling of `TYPE-1`: there it is about behavior, here about state. Both push decisions into the type system.
+- For a set of *independent* on/off flags, use a typed bitset (`bitflags`), NOT a struct of many `bool`s and NOT an `enum` — an `enum` models "exactly one of," a bitset models "any subset of." Picking the wrong one is itself an illegal-state bug (C-BITFLAG).
 
 ```rust
 // BEFORE — ssl=true with ssl_cert=None is an invalid runtime state
@@ -81,7 +82,13 @@ fn evens(v: Vec<i32>) -> Box<dyn Iterator<Item = i32>> { Box::new(v.into_iter().
 fn evens(v: Vec<i32>) -> impl Iterator<Item = i32> { v.into_iter().filter(|x| x % 2 == 0) }
 ```
 
-## Severity
+### TYPE-7 — Niche types make zero/null unrepresentable (and `Option` free)
+- Where zero or null is invalid, use `NonZero<u32>` / `NonNull<T>` so the illegal value cannot be constructed — the std-primitive corollary of `TYPE-3`. Flag a `u32` documented "0 means absent / never zero": that wants `NonZero`, and if optional, `Option<NonZero<u32>>`.
+- Bonus: the forbidden bit pattern becomes the niche, so `Option<NonZero<u32>>` is the size of `u32` — no discriminant word.
+
+### TYPE-8 — Associated types over generic params for one-impl relations
+- When a trait relates each implementer to exactly ONE companion type (as `Iterator::Item`, `Deref::Target`, `Add::Output` do), use an **associated type**, not a generic parameter. Flag `trait Parser<Output>` where any given parser yields exactly one output type — it wants `trait Parser { type Output; }`.
+- Generic params are for genuinely many-impls-per-implementer (`From<T>`: one type, many sources). Over-parameterizing a one-to-one relation forces turbofish at call sites and makes inference ambiguous.
 - **BLOCKER** — will cause bugs or is prohibited (e.g., a struct whose fields permit an invalid state that the code then guards at runtime).
 - **DESIGN** — idiomatic restructuring recommended (most type-modeling findings land here).
 - **NIT** — minor.

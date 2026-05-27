@@ -55,11 +55,22 @@ let cfg = ServerConfig::builder().port(8080).tls(true).build();
 - Flag APIs with paired `acquire()`/`release()` or `lock()`/`unlock()` manual calls — callers forget to release, or use-after-release.
 - Tie cleanup to `Drop` on a guard type that mediates access (like `MutexGuard`). Lifetimes ensure no reference outlives the guard and cleanup is automatic on scope exit.
 - Do not expose the raw resource alongside the guard; access flows only through the guard.
+- A `Drop` impl must **never panic** — a panic while unwinding aborts the whole process. If cleanup can genuinely fail or block, also expose an explicit `close()`/`finish()` returning `Result` and keep `Drop` as best-effort (C-DTOR-FAIL).
 
 ### API-7 — `#[must_use]`, `#[non_exhaustive]`, and private fields
 - Flag public functions returning a status / `Result`-like type a caller can silently drop, and types representing a computed value pointless to discard. Add `#[must_use]` so ignoring them warns. (`Result` carries it already; your wrapper types do not.)
 - Flag public `enum`s/`struct`s likely to grow variants/fields. Mark `#[non_exhaustive]` so adding one later is not a breaking change and downstream `match`es keep a `_` arm.
 - Keep struct fields **private** (C-STRUCT-PRIVATE): public fields pin your representation and destroy your ability to enforce invariants — the same reasoning as the newtype constructor (`types`' `TYPE-2`).
+
+### API-8 — Eagerly implement the common traits (C-COMMON-TRAITS)
+- Derive/impl the standard cluster on public types wherever it applies: `Debug` (**always** — flag any public type missing it), `Clone`, `Copy`, `PartialEq`/`Eq`, `Hash`, `PartialOrd`/`Ord`, `Default`, and `Display` for user-facing types.
+- The orphan rule means a downstream crate can NEVER add these later — omitting one permanently cripples interop (no `{:?}` in their logs, no use as a `HashMap` key). Cheap now, breaking change later.
+
+### API-9 — Return values, not out-parameters (C-NO-OUT)
+- Flag `&mut T` parameters used to *return* a computed value; return a tuple or a named struct instead — it composes and is visible at the call site. The one legitimate out-param is reusing a caller-owned buffer (`Read::read(&mut self, buf: &mut [u8])`).
+
+### API-10 — Keep `dyn`-usable traits object-safe (C-OBJECT)
+- If a trait is (or may plausibly be) used as `dyn Trait`, keep it object-safe: no generic methods, no `self`-by-value receivers, no bare `Self` in a return/sizing position. When you want ergonomic generics *and* `dyn`, split into an object-safe core trait plus a generic extension trait with a blanket impl. (For a closed variant set, prefer enum dispatch over `dyn` — `types`' `TYPE-1`.)
 
 ## Severity
 - **BLOCKER** — reserved for an abstraction that actively causes bugs (e.g., a manual `release()` API that invites use-after-free, a dropped `Result` that loses errors).
