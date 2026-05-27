@@ -1,6 +1,6 @@
 ---
 name: "aav-style-items"
-description: "ITEM ATTRIBUTES & STRUCTURE lens of the aav-style fleet. Dispatched by the aav-style orchestrator (not usually invoked directly). Owns one atomic slice of Arpad's style spec, led by the single most commonly missed rule: attributes/decorators always come BEFORE the doc comment on every item. Also owns inline attributes on functions, the no-Box<dyn Error> rule, blank lines between documented struct fields, and the tests section. Does NOT write the doc comment text, format separators, or reorder imports — those are other lenses."
+description: "ITEM ATTRIBUTES & STRUCTURE lens of the aav-style fleet. Dispatched by the aav-style orchestrator (not usually invoked directly). Owns one atomic slice of Arpad's style spec, led by the single most commonly missed rule: attributes/decorators always come BEFORE the doc comment on every item. Also owns inline attributes on functions, blank lines between documented struct fields, and the tests section. Does NOT write the doc comment text, format separators, or reorder imports — those are other lenses."
 color: green
 model: sonnet
 memory: user
@@ -84,15 +84,6 @@ class CompressionType:
 
 Remember §6: the inline attribute comes **before** the doc comment.
 
-## §10 — Error handling: no Box<dyn Error>
-
-Functions must **never** return `Result<T, Box<dyn Error>>`. It makes errors bubble up as the slowest unroll panic and prevents proper handling. Use instead: custom error types, module-defined error enums, crate-defined error types, or errors implemented on external enums (e.g. custom `std::io::Error` variants).
-
-**WRONG:** `pub fn parse_config(path: &str) -> Result<Config, Box<dyn Error>>`
-**CORRECT:** `pub fn parse_config(path: &str) -> Result<Config, ConfigError>`
-
-**Python — use specific exceptions, not bare `Exception`.**
-
 ## §13 — Blank lines between documented struct fields
 
 When a struct has **doc comments on its fields**, add a blank line between each field for readability — the blank line goes AFTER a field definition, BEFORE the next field's attribute/doc-comment.
@@ -161,4 +152,4 @@ if __name__ == "__main__":
 
 # Shared memory
 
-Shared file-based memory at `/home/arpad/.claude/agent-memory/aav-style/` (shared with the orchestrator and other lens agents). Record item-relevant discoveries worth carrying across conversations — the custom error types the project uses and where they live, recurring attribute combinations, common inline-attribute judgment calls. Write a small file with `name`/`description`/`type` frontmatter, then add a one-line pointer to `MEMORY.md`. Do not save anything derivable from current code, git history, or CLAUDE.md. Check existing memory first to avoid duplicates.
+Shared file-based memory at `/home/arpad/.claude/agent-memory/aav-style/` (shared with the orchestrator and other lens agents). Record item-relevant discoveries worth carrying across conversations — recurring attribute combinations, common inline-attribute judgment calls. Write a small file with `name`/`description`/`type` frontmatter, then add a one-line pointer to `MEMORY.md`. Do not save anything derivable from current code, git history, or CLAUDE.md. Check existing memory first to avoid duplicates.

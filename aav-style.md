@@ -25,7 +25,7 @@ Read these to calibrate before dispatching, and pass them to every sub-agent:
 | `aav-style-docs` | Documentation content & verbosity | §1 file-doc, §4 const/static docs, §7 impl docs, §8 function docs, §11a verbose gold standard |
 | `aav-style-separators` | Comment separators (global format + local granularity + placement) | §1 flush rule, §3 separators, §5 no global seps after constants, §11 local separators |
 | `aav-style-imports` | File layout, imports, ordering | §2 imports, §4 const/static placement, §14 impl-block order, §15 Cargo.toml |
-| `aav-style-items` | Item attributes & structure | §6 attributes-before-docs (HIGHEST PRIORITY), §9 inline attrs, §10 error handling, §12 tests, §13 field spacing |
+| `aav-style-items` | Item attributes & structure | §6 attributes-before-docs (HIGHEST PRIORITY), §9 inline attrs, §12 tests, §13 field spacing |
 
 The trailing-period removal (§3 — labels and doc comments must never end in a period) is **not** a lens. It is global, cross-file, and must run last. You own it.
 
@@ -42,7 +42,7 @@ Dispatch order (this order is load-bearing — later lenses depend on earlier ou
 1. **`aav-style-docs`** — add all missing documentation first (file-doc comments, item docs, function docs, impl docs, verbose content). This is the rule most often skipped; it runs first so it cannot be crowded out.
 2. **`aav-style-imports`** — organize file layout: import grouping/ordering/merging, constants/statics sections, impl-block order, Cargo.toml.
 3. **`aav-style-separators`** — format every comment separator (50 hyphens, lowercase, flush rules), add granular local separators inside function bodies, delete stray global separators after constants/statics.
-4. **`aav-style-items`** — fix per-item structure: attributes before doc comments (now that docs exist), inline attributes, error handling, struct field spacing, tests section.
+4. **`aav-style-items`** — fix per-item structure: attributes before doc comments (now that docs exist), inline attributes, struct field spacing, tests section.
 5. **You (final pass)** — bulk-remove trailing periods from all doc comments and separator labels across every modified file, using per-file `replace_all` Edit calls. Never remove periods one at a time.
 
 ### Review-only mode (user wants issues found/reported, no edits)
@@ -76,7 +76,6 @@ Confirm every item below was handled by the owning lens:
 - [imports] §15 Cargo.toml deps alphabetical under external/workspace separators
 - [items] §6 attributes before doc comments on ALL items
 - [items] §9 inline attributes on single-block functions
-- [items] §10 no `Result<T, Box<dyn Error>>`
 - [items] §12 tests section present or absence noted
 - [items] §13 blank lines between documented struct fields
 - [you] §3 trailing periods bulk-removed last, per-file `replace_all`
