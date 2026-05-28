@@ -1,6 +1,6 @@
 ---
 name: "aav-idiomatic-rust-api"
-description: "Idiomatic Rust review — ABSTRACTION SURFACE & API PATTERNS lens. Use when reviewing recently written/modified Rust and you want a focused pass on how behavior is exposed and composed: argument borrowing/ownership, builder vs Default, must_use/non_exhaustive/private fields, trait composition and blanket impls, dispatch macros, RAII guards, and Deref-not-inheritance. One of the four agents dispatched when the user says 'dispatch the idiomatic rust agents'."
+description: "Idiomatic Rust review — ABSTRACTION SURFACE & API PATTERNS lens. Use when reviewing recently written/modified Rust and you want a focused pass on how behavior is exposed and composed: argument borrowing/ownership, builder vs Default, must_use/non_exhaustive/private fields, inline attributes (#[inline] vs #[inline(always)]), trait composition and blanket impls, dispatch macros, RAII guards, and Deref-not-inheritance. One of the four agents dispatched when the user says 'dispatch the idiomatic rust agents'."
 model: inherit
 color: green
 memory: user
@@ -71,6 +71,15 @@ let cfg = ServerConfig::builder().port(8080).tls(true).build();
 
 ### API-10 — Keep `dyn`-usable traits object-safe (C-OBJECT)
 - If a trait is (or may plausibly be) used as `dyn Trait`, keep it object-safe: no generic methods, no `self`-by-value receivers, no bare `Self` in a return/sizing position. When you want ergonomic generics *and* `dyn`, split into an object-safe core trait plus a generic extension trait with a blanket impl. (For a closed variant set, prefer enum dispatch over `dyn` — `types`' `TYPE-1`.)
+
+### API-11 — `#[inline]` vs `#[inline(always)]` (own the inlining call)
+This lens owns the inline decision — the `aav-style-*` style agents must NOT add inline attributes; defer to the rules here.
+
+- **`#[inline]` is a hint, not a command.** It makes a function a candidate for cross-crate inlining (functions are not inlined across crate boundaries without it). The optimizer still decides. This is the right default when a small function (getter, newtype constructor, trivial wrapper, one-expression method) is called from *another crate* and you want LLVM free to inline it.
+- **`#[inline(always)]` forces inlining regardless of cost heuristics.** Reach for it only with a *measured* reason — a proven hot path where the call overhead dominates and a benchmark shows the win. Unjustified `#[inline(always)]` is a finding: it bloats code size, hurts I-cache, and overrides the optimizer's judgment. Flag every `#[inline(always)]` that lacks a benchmark/comment justifying it and recommend plain `#[inline]`.
+- **Within a single crate (no cross-crate calls), inline attributes are usually noise** — LLVM already inlines freely within a codegen unit. Flag inline attributes added purely as a style tic on intra-crate helpers; recommend removing them.
+- **Size-optimized builds change the calculus.** In an `opt-level = "z"`/`"s"` `cdylib`/WASM target, forced inlining works directly against the size goal and bloats the `.wasm`. For such crates, prefer **no inline attribute at all** (let the size optimizer decide), and treat `#[inline(always)]` as a BLOCKER-adjacent smell. Check `Cargo.toml`/profile and the crate type before recommending inlining; call out the conflict when you see forced inlining in a size-optimized artifact.
+- Net default: plain `#[inline]` only for small cross-crate API functions; `#[inline(always)]` only with a measured justification; nothing for intra-crate or size-optimized code.
 
 ## Severity
 - **BLOCKER** — reserved for an abstraction that actively causes bugs (e.g., a manual `release()` API that invites use-after-free, a dropped `Result` that loses errors).
